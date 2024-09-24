@@ -1,1 +1,14 @@
-intro
+Visual Question Answering on VQA-RAD by GPT4o with four evaluation methods:
+
+- BERTScore F1
+- G-Eval 
+- RAGAS correctness
+- RAGAS similarity
+
+Execution:
+
+python vqa_rad_gpt4o_en.py ~ create English answers
+python vqa_rad_gpt4o_ch.py ~ create Chinese answers
+
+Note 1: You need your own OpenAI API KEY to run the programs. 
+Note 2: You can unmask the code to show the image with question/ground_truth/prediction/scores.
