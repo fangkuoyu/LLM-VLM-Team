@@ -1,0 +1,40 @@
+1. 資料準備
+
+    flaviagiammarino/vqa-rad 和 openbmb/RLAIF-V-Dataset  兩個資料集的格式及功能不同, 這兩者差異應該說清楚:
+
+    - flaviagiammarino/vqa-rad 欄位包括 image/question/answer, 適合 SFT 或 PPO 訓練
+    - openbmb/RLAIF-V-Dataset  欄位包括 image/question/chosen/rejected 適合 DPO  訓練
+
+    如果要用 flaviagiammarino/vqa-rad 作為 DPO 訓練需要做資料轉換, 例如:
+
+    - 將原有 answer 欄位作為 chosen 欄位
+    - 以 LLaVA 針對 image/question 生成預測答案做為 rejected 欄位 
+
+2. TRL DPOTrainer 支援 LLM 訓練 及 VLM 訓練, 應該分別描述 "TRL DPOTrainer for LLM" 及 "TRL DPOTrainer for VLM", 
+    或描述兩者主要的不同, 我主要比對 GitHub trl/examples/scripts/ 之下 dpo.py (LLM) 及 dpo_visual.py (VLM)，
+    有幾點我覺得筆記要講, 或說我要澄清我是否理解正確
+
+2.1 下載模型  
+
+      dpo.py (LLM) 用 AutoModelForCausalLM.from_pretrained 下載模型
+      dpo_visual.py (VLM) 用 AutoModelForVision2Seq.from_pretrained 下載模型
+
+2.2 資料處理
+
+      dpo.py (LLM) 用 AutoTokenizer 做 text 資料處理
+      dpo_visual.py (VLM) 用 AutoProcessor 做 text/image 資料處理
+
+2.3 DPO 需要兩個模型作運算, 主要目的是保持 "微調模型" 和 "原始模型" 不要相差太遠, 這點 DPO 和 PPO 兩者設計一致,
+      而在 TRL DPOTrainer 及 TRL PPOTrainer 之下的參數名稱是 model / ref_mode, 我覺得這裡原始設計有點奇怪的是:
+
+      如果省略輸入 ref_model 的話, TRL 就會自動拷貝一份 model 作為 ref_model 這沒有問題;
+      如果輸入錯誤的 ref_model (e.g., model = LLaMA-2-7B, ref_model = LLaMA-3-70B) 訓練就可能出問題, 那為什麼 
+      TRL 不防止用戶出錯而保留 ref_model 做為參數? 
+
+      我在網上問過上述問題 (https://github.com/huggingface/trl/issues/1727 標題是 Questions about the reference model
+      in PPOTrainer and DPOTrainer) 他們說法是有可能有研究需要, 到此似乎故事結束.
+
+      故事另有發展是如果使用 PEFT (e.g., LoRA) 的話, model 及 ref_model 應該如何設定, 這個問題出自 
+      (https://github.com/huggingface/trl/issues/2047 標題 Always allow ref_model=None) 
+
+      綜合來說, model, ref_model 在有無 PEFT (e.g., LoRA) 的情況之下需要仔細說明
